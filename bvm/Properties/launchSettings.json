@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Bvm": {
+      "commandName": "Project",
+      "commandLineArgs": "-d deno list --all",
+      "environmentVariables": {
+      }
+    }
+  }
+}
