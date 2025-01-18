@@ -124,7 +124,8 @@ public partial class FileSystemManager(
 
     var destination = platform switch {
       Platform.WindowsAmd64 => Path.Combine(currentPath, BunWindowsExecutable),
-      Platform.LinuxAmd64 | Platform.LinuxAarch64 => Path.Combine(currentPath, BunXnixExecutable),
+      Platform.LinuxAmd64 => Path.Combine(currentPath, BunXnixExecutable),
+      Platform.LinuxAarch64 => Path.Combine(currentPath, BunXnixExecutable),
       _ => throw new InvalidPlatformException(platform),
     };
 
@@ -141,7 +142,8 @@ public partial class FileSystemManager(
 
     var destination = platform switch {
       Platform.WindowsAmd64 => Path.Combine(currentPath, DenoWindowsExecutable),
-      Platform.LinuxAmd64 | Platform.LinuxAarch64 => Path.Combine(currentPath, DenoXnixExecutable),
+      Platform.LinuxAmd64 => Path.Combine(currentPath, DenoXnixExecutable),
+      Platform.LinuxAarch64 => Path.Combine(currentPath, DenoXnixExecutable),
       _ => throw new System.Exception("Unsupported platform"),
     };
 
