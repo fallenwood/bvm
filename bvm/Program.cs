@@ -32,8 +32,16 @@ rootCommand.AddCommand(commands.ListCommand());
 rootCommand.AddCommand(commands.InstallCommand());
 rootCommand.AddCommand(commands.UninstallCommand());
 
-rootCommand.SetHandler(() =>
+rootCommand.SetHandler(async () =>
   {
+    var config = await fileSystemManager.ReadConfigAsync();
+
+    Console.WriteLine($"proxy         = {config.Proxy}");
+    Console.WriteLine($"node registry = {config.NodeRegistry}");
+    Console.WriteLine($"npm  registry = {config.NpmRegistry}");
+    Console.WriteLine($"bun  version  = {config.BunVersion}");
+    Console.WriteLine($"deno version  = {config.DenoVersion}");
+    Console.WriteLine($"node version  = {config.NodeVersion}");
   });
 
 await rootCommand.InvokeAsync(args);

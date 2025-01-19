@@ -3,6 +3,7 @@ using Bvm.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -13,19 +14,26 @@ public interface IFileSystemManager {
   public string TmpPath { get; }
   public List<Release> GetInstalledBunReleases();
   public List<Release> GetInstalledDenoReleases();
+  public List<Release> GetInstalledNodeReleases();
   public Task WriteConfigAsync(Config config);
   public Task<Config> ReadConfigAsync();
   public void CopyOrLinkBun(string tag);
   public void CopyOrLinkDeno(string tag);
+  public void CopyOrLinkNode(string tag, bool all);
   public void RemoveBun(string tag);
   public void RemoveDeno(string tag);
+  public void RemoveNode(string tag);
+  public void ExtractZipFile(string zipFilePath, string extractPath);
+  public void ExtractTarGzipFile(string gzipFilePath, string extractPath);
 }
 
 public partial class FileSystemManager(
   Platform platform,
   string currentPath,
   string tmpPath,
+#pragma warning disable CS9113 // Parameter is unread.
   string profilePath)
+#pragma warning restore CS9113 // Parameter is unread.
   : IFileSystemManager {
   private const string ConfigFileName = ".config.ini";
   private const string BunWindowsAmd64SubPath = "bun-windows-x64";
@@ -37,6 +45,12 @@ public partial class FileSystemManager(
   private const string DenoWindowsExecutable = "deno.exe";
   private const string DenoXnixExecutable = "deno";
 
+  private const string NodeWindowsExecutable = "node.exe";
+  private const string NodeXnixExecutable = "node";
+  private const string NodeWindowsAmd64SubPath = "{0}-win-x64";
+
+  private Config? cachedConfig = null;
+
   public string CurrentPath => currentPath;
 
   public string TmpPath => tmpPath;
@@ -47,11 +61,17 @@ public partial class FileSystemManager(
   [GeneratedRegex(@"deno-v(\d+\.\d+\.\d+)", RegexOptions.Compiled)]
   private static partial Regex DenoDirectory();
 
+  [GeneratedRegex(@"node-v(\d+\.\d+\.\d+)", RegexOptions.Compiled)]
+  private static partial Regex NodeDirectory();
+
   public List<Release> GetInstalledBunReleases() =>
     this.GetInstalledReleases(BunDirectory());
 
   public List<Release> GetInstalledDenoReleases() =>
     this.GetInstalledReleases(DenoDirectory());
+
+  public List<Release> GetInstalledNodeReleases() =>
+    this.GetInstalledReleases(NodeDirectory());
 
   public List<Release> GetInstalledReleases(Regex regex) {
     var directoes = Directory.GetDirectories(currentPath)
@@ -77,18 +97,40 @@ public partial class FileSystemManager(
     if (!string.IsNullOrEmpty(config.Proxy)) {
       sb.AppendLine($"{Config.ProxyKey}={config.Proxy}");
     }
+
+    if (!string.IsNullOrEmpty(config.NodeRegistry)) {
+      sb.AppendLine($"{Config.NodeRegistryKey}={config.NodeRegistry}");
+    }
+
+    if (!string.IsNullOrEmpty(config.NpmRegistry)) {
+      sb.AppendLine($"{Config.NpmRegistryKey}={config.NpmRegistry}");
+    }
+
     if (!string.IsNullOrEmpty(config.BunVersion)) {
       sb.AppendLine($"{Config.BunVersionKey}={config.BunVersion}");
+    }
+
+    if (!string.IsNullOrEmpty(config.DenoVersion)) {
+      sb.AppendLine($"{Config.DenoVersionKey}={config.DenoVersion}");
+    }
+
+    if (!string.IsNullOrEmpty(config.NodeVersion)) {
+      sb.AppendLine($"{Config.NodeVersionKey}={config.NodeVersion}");
     }
 
     await File.WriteAllTextAsync(configPath, sb.ToString());
   }
 
   public async Task<Config> ReadConfigAsync() {
+    if (this.cachedConfig != null) {
+      return this.cachedConfig;
+    }
+
     var configPath = Path.Combine(currentPath, ConfigFileName);
     var config = new Config();
 
     if (!File.Exists(configPath)) {
+      this.cachedConfig = config;
       return config;
     }
 
@@ -108,57 +150,141 @@ public partial class FileSystemManager(
         case Config.BunVersionKey:
           config.BunVersion = parts[1];
           break;
+        case Config.DenoVersionKey:
+          config.DenoVersion = parts[1];
+          break;
+        case Config.NodeRegistryKey:
+          config.NodeRegistry = parts[1];
+          break;
+        case Config.NpmRegistryKey:
+          config.NpmRegistry = parts[1];
+          break;
+        case Config.NodeVersionKey:
+          config.NodeVersion = parts[1];
+          break;
       }
     }
 
+    this.cachedConfig = config;
     return config;
   }
 
   public void CopyOrLinkBun(string tag) {
-    var source = platform switch {
-      Platform.WindowsAmd64 => Path.Combine(currentPath, tag, BunWindowsAmd64SubPath, BunWindowsExecutable),
-      Platform.LinuxAmd64 => Path.Combine(currentPath, tag, BunLinuxAmd64SubPath, BunXnixExecutable),
-      Platform.LinuxAarch64 => Path.Combine(currentPath, tag, BunLinuxAarch64SubPath, BunXnixExecutable),
+    var exe = platform switch {
+      Platform.WindowsAmd64 => BunWindowsExecutable,
+      Platform.LinuxAmd64 => BunXnixExecutable,
+      Platform.LinuxAarch64 => BunXnixExecutable,
       _ => throw new InvalidPlatformException(platform),
     };
 
-    var destination = platform switch {
-      Platform.WindowsAmd64 => Path.Combine(currentPath, BunWindowsExecutable),
-      Platform.LinuxAmd64 => Path.Combine(currentPath, BunXnixExecutable),
-      Platform.LinuxAarch64 => Path.Combine(currentPath, BunXnixExecutable),
+    var subpath = platform switch {
+      Platform.WindowsAmd64 => BunWindowsAmd64SubPath,
+      Platform.LinuxAmd64 => BunLinuxAmd64SubPath,
+      Platform.LinuxAarch64 => BunLinuxAarch64SubPath,
       _ => throw new InvalidPlatformException(platform),
     };
+
+    var source = Path.Combine(currentPath, tag, subpath, exe);
+    var destination = Path.Combine(currentPath, exe);
 
     CopyOrLink(source, destination);
   }
 
   public void CopyOrLinkDeno(string tag) {
-    var source = platform switch {
-      Platform.WindowsAmd64 => Path.Combine(currentPath, tag, DenoWindowsExecutable),
-      Platform.LinuxAmd64 => Path.Combine(currentPath, tag, DenoXnixExecutable),
-      Platform.LinuxAarch64 => Path.Combine(currentPath, tag, DenoXnixExecutable),
-      _ => throw new System.Exception("Unsupported platform"),
+    var exe = platform switch {
+      Platform.WindowsAmd64 => DenoWindowsExecutable,
+      Platform.LinuxAmd64 => DenoXnixExecutable,
+      Platform.LinuxAarch64 => DenoXnixExecutable,
+      _ => throw new InvalidPlatformException(platform),
     };
 
-    var destination = platform switch {
-      Platform.WindowsAmd64 => Path.Combine(currentPath, DenoWindowsExecutable),
-      Platform.LinuxAmd64 => Path.Combine(currentPath, DenoXnixExecutable),
-      Platform.LinuxAarch64 => Path.Combine(currentPath, DenoXnixExecutable),
-      _ => throw new System.Exception("Unsupported platform"),
-    };
+    var source = Path.Combine(currentPath, tag, exe);
+    var destination = Path.Combine(currentPath, exe);
 
     CopyOrLink(source, destination);
   }
 
+  public void CopyOrLinkNode(string tag, bool all) {
+    var subpath = platform switch {
+      Platform.WindowsAmd64 => string.Format(NodeWindowsAmd64SubPath, tag),
+      Platform.LinuxAmd64 => "linux-x64",
+      Platform.LinuxAarch64 => "linux-arm64",
+      _ => throw new InvalidPlatformException(platform),
+    };
+
+    if (all) {
+      var sources = Directory.GetFileSystemEntries(Path.Combine(currentPath, tag, subpath));
+
+      foreach (var source in sources) {
+        var destination = Path.Combine(currentPath, Path.GetFileName(source));
+        CopyOnly(source, destination);
+      }
+    } else {
+      var exe = platform switch {
+        Platform.WindowsAmd64 => NodeWindowsExecutable,
+        Platform.LinuxAmd64 => NodeXnixExecutable,
+        Platform.LinuxAarch64 => NodeXnixExecutable,
+        _ => throw new Exception("Unsupported platform"),
+      };
+
+      var source = Path.Combine(currentPath, tag, subpath, exe);
+      var destination = Path.Combine(currentPath, exe);
+
+      CopyOrLink(source, destination);
+    }
+  }
+
+  public void CopyDirectories(string source, string destination) {
+    var dir = new DirectoryInfo(source);
+
+    var dirs = dir.GetDirectories();
+
+    Directory.CreateDirectory(destination);
+
+    foreach (var file in dir.GetFiles()) {
+      string targetFilePath = Path.Combine(destination, file.Name);
+      if (File.Exists(targetFilePath)) {
+        File.Delete(targetFilePath);
+      }
+
+      file.CopyTo(targetFilePath);
+    }
+
+    foreach (var subDir in dirs) {
+      string newDestinationDir = Path.Combine(destination, subDir.Name);
+      CopyDirectories(subDir.FullName, newDestinationDir);
+    }
+  }
+
   public void CopyOrLink(string source, string destination) {
+    if (Directory.Exists(destination)) {
+      Directory.Delete(destination, recursive: true);
+    }
+
     if (File.Exists(destination)) {
       File.Delete(destination);
     }
 
-    if (platform == Platform.WindowsAmd64) {
-      File.Copy(source, destination);
+    if (Directory.Exists(source)) {
+      Directory.CreateSymbolicLink(destination, source);
     } else {
       File.CreateSymbolicLink(destination, source);
+    }
+  }
+
+  public void CopyOnly(string source, string destination) {
+    if (Directory.Exists(destination)) {
+      Directory.Delete(destination, recursive: true);
+    }
+
+    if (File.Exists(destination)) {
+      File.Delete(destination);
+    }
+
+    if (Directory.Exists(source)) {
+      CopyDirectories(source, destination);
+    } else {
+      File.Copy(source, destination);
     }
   }
 
@@ -181,5 +307,24 @@ public partial class FileSystemManager(
     } else {
       Console.WriteLine($"Directory {source} not found");
     }
+  }
+
+  public void RemoveNode(string tag) {
+    var filename = $"node-{tag}";
+    var source = Path.Combine(currentPath, filename);
+
+    if (Directory.Exists(source)) {
+      Directory.Delete(source, recursive: true);
+    } else {
+      Console.WriteLine($"Directory {source} not found");
+    }
+  }
+
+  public void ExtractZipFile(string zipFilePath, string extractPath) {
+    ZipFile.ExtractToDirectory(zipFilePath, extractPath);
+  }
+
+  public void ExtractTarGzipFile(string gzipFilePath, string extractPath) {
+    TarGzFile.ExtractToDirectory(gzipFilePath, extractPath);
   }
 }

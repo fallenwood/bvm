@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Bvm.Models;
 
 namespace Bvm;
 
@@ -39,6 +40,18 @@ public partial class Commands(
     return $"v{tag}";
   }
 
+  public string NormalizeNodeTag(string tag) {
+    if (tag.StartsWith("v")) {
+      return tag;
+    }
+
+    if (tag.StartsWith("node-")) {
+      return tag[5..];
+    }
+
+    return $"v{tag}";
+  }
+
   public string NormalizeDenoDirectoryName(string tag) {
     if (tag.StartsWith("deno-")) {
       return tag;
@@ -49,5 +62,25 @@ public partial class Commands(
     }
 
     return $"deno-v{tag}";
+  }
+
+  public string NormalizeNodeDirectoryName(string tag) {
+    if (tag.StartsWith("node-")) {
+      return tag;
+    }
+
+    if (tag.StartsWith("v")) {
+      return $"node-{tag}";
+    }
+
+    return $"node-v{tag}";
+  }
+
+  public string? NormalizeDistribution(string? distribution) {
+    if (distribution == "nodejs") {
+      return Distribution.Node;
+    }
+
+    return distribution;
   }
 }

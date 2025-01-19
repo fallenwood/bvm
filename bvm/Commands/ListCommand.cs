@@ -22,6 +22,7 @@ public partial class Commands {
         var installedReleases = distribution switch {
           Distribution.Bun => this.fileSystemManager.GetInstalledBunReleases(),
           Distribution.Deno => this.fileSystemManager.GetInstalledDenoReleases(),
+          Distribution.Node => this.fileSystemManager.GetInstalledNodeReleases(),
           _ => throw new InvalidDistributionException(distribution!),
         };
 
@@ -29,9 +30,12 @@ public partial class Commands {
         var releases = new List<Release>(installedReleases.Count);
 
         if (all) {
+          var config = await this.fileSystemManager.ReadConfigAsync();
+
           var remoteReleases = distribution switch {
             Distribution.Bun => await this.downloadManager.RetriveBunReleasesAsync(),
             Distribution.Deno => await this.downloadManager.RetriveDenoReleasesAsync(),
+            Distribution.Node => await this.downloadManager.RetrieveNodejsReleasesAsync(config.NodeRegistry),
             _ => throw new InvalidDistributionException(distribution!),
           };
 
@@ -40,7 +44,7 @@ public partial class Commands {
           releases.AddRange(installedReleases);
         }
 
-        foreach (var release in releases) {
+        foreach (var release in releases.OrderBy(e => e.CreatedAt)) {
           var installed = installedTags.Contains(release.TagName) ? "*" : string.Empty;
           Console.WriteLine($"{release.Name} {installed}");
         }
