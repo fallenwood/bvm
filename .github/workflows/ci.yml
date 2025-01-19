@@ -22,10 +22,10 @@ jobs:
       with:
         dotnet-version: 9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore bvm/bvm.csproj
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore bvm/bvm.csproj
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal bvm.unittests/bvm.unittests.csproj
     - name: Publish Aot
-      run: dotnet publish -c Release
+      run: dotnet publish -c Release bvm/bvm.csproj
