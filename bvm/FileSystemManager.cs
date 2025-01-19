@@ -48,6 +48,8 @@ public partial class FileSystemManager(
   private const string NodeWindowsExecutable = "node.exe";
   private const string NodeXnixExecutable = "node";
   private const string NodeWindowsAmd64SubPath = "{0}-win-x64";
+  private const string NodeLinuxAmd64SubPath = "{0}-linux-x64";
+  private const string NodeLinuxAarch64SubPath = "{0}-linux-arm64";
 
   private Config? cachedConfig = null;
 
@@ -187,7 +189,7 @@ public partial class FileSystemManager(
     var source = Path.Combine(currentPath, tag, subpath, exe);
     var destination = Path.Combine(currentPath, exe);
 
-    CopyOrLink(source, destination);
+    LinkOnly(source, destination);
   }
 
   public void CopyOrLinkDeno(string tag) {
@@ -201,36 +203,46 @@ public partial class FileSystemManager(
     var source = Path.Combine(currentPath, tag, exe);
     var destination = Path.Combine(currentPath, exe);
 
-    CopyOrLink(source, destination);
+    LinkOnly(source, destination);
   }
 
   public void CopyOrLinkNode(string tag, bool all) {
-    var subpath = platform switch {
-      Platform.WindowsAmd64 => string.Format(NodeWindowsAmd64SubPath, tag),
-      Platform.LinuxAmd64 => "linux-x64",
-      Platform.LinuxAarch64 => "linux-arm64",
-      _ => throw new InvalidPlatformException(platform),
-    };
+    if (platform == Platform.WindowsAmd64) {
+      var subpath = string.Format(NodeWindowsAmd64SubPath, tag);
 
-    if (all) {
-      var sources = Directory.GetFileSystemEntries(Path.Combine(currentPath, tag, subpath));
+      if (all) {
+        var sources = Directory.GetFileSystemEntries(Path.Combine(currentPath, tag, subpath));
+
+        foreach (var source in sources) {
+          var filename = Path.GetFileName(source);
+          if (filename == NodeWindowsExecutable) {
+            continue;
+          }
+
+          var destination = Path.Combine(currentPath, Path.GetFileName(source));
+          CopyOnly(source, destination);
+        }
+      }
+
+      var exeSource = Path.Combine(currentPath, tag, subpath, NodeWindowsExecutable);
+      var exeDestination = Path.Combine(currentPath, NodeWindowsExecutable);
+
+      LinkOnly(exeSource, exeDestination);
+    } else if (platform == Platform.LinuxAarch64 || platform == Platform.LinuxAmd64) {
+      var subpath = platform switch {
+        Platform.LinuxAarch64 => string.Format(NodeLinuxAarch64SubPath, tag),
+        Platform.LinuxAmd64 => string.Format(NodeLinuxAmd64SubPath, tag),
+        _ => throw new InvalidPlatformException(platform),
+      };
+
+      var sources = Directory.GetFileSystemEntries(Path.Combine(currentPath, tag, subpath, "bin"));
 
       foreach (var source in sources) {
         var destination = Path.Combine(currentPath, Path.GetFileName(source));
-        CopyOnly(source, destination);
+        LinkOnly(source, destination);
       }
     } else {
-      var exe = platform switch {
-        Platform.WindowsAmd64 => NodeWindowsExecutable,
-        Platform.LinuxAmd64 => NodeXnixExecutable,
-        Platform.LinuxAarch64 => NodeXnixExecutable,
-        _ => throw new Exception("Unsupported platform"),
-      };
-
-      var source = Path.Combine(currentPath, tag, subpath, exe);
-      var destination = Path.Combine(currentPath, exe);
-
-      CopyOrLink(source, destination);
+      throw new InvalidPlatformException(platform);
     }
   }
 
@@ -256,7 +268,7 @@ public partial class FileSystemManager(
     }
   }
 
-  public void CopyOrLink(string source, string destination) {
+  public void LinkOnly(string source, string destination) {
     if (Directory.Exists(destination)) {
       Directory.Delete(destination, recursive: true);
     }

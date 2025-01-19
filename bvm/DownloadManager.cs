@@ -130,7 +130,7 @@ public sealed partial class DownloadManager(
         var nodeExe = platform switch {
           Platform.WindowsAmd64 => string.Format(NodeWindowsAmd64Exe, tag),
           Platform.LinuxAmd64 => string.Format(NodeLinuxAmd64Exe, tag),
-          Platform.LinuxAarch64 => string.Format(NodeLinuxAmd64Exe, tag),
+          Platform.LinuxAarch64 => string.Format(NodeLinuxAarch64Exe, tag),
           _ => throw new InvalidPlatformException(platform),
         };
 

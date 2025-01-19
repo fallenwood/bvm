@@ -14,7 +14,7 @@ public partial class Commands {
     var tagArgument = new Argument<string?>(name: "tag");
     var allOption = new Option<bool>(
       aliases: ["--all", "-a"],
-      description: "Copy or link all assets, only works for nodejs");
+      description: "Copy or link all assets, only works for nodejs on windows");
 
     useCommand.AddArgument(tagArgument);
     useCommand.AddOption(allOption);
