@@ -1,10 +1,6 @@
 using Bvm;
-using System;
 using System.CommandLine;
-using System.IO;
 using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 var platform = PlatformDetector.Detect();
 
