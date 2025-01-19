@@ -2,7 +2,7 @@
   "profiles": {
     "Bvm": {
       "commandName": "Project",
-      "commandLineArgs": "-d deno list --all",
+      "commandLineArgs": "-d node install 23.6.0",
       "environmentVariables": {
       }
     }

@@ -31,9 +31,14 @@ public partial class Commands {
           return;
         }
 
+        var config = await this.fileSystemManager.ReadConfigAsync();
+
+        distribution = this.NormalizeDistribution(distribution);
+
         List<Release> releases = distribution switch {
           Distribution.Bun => await this.downloadManager.RetriveBunReleasesAsync(),
           Distribution.Deno => await this.downloadManager.RetriveDenoReleasesAsync(),
+          Distribution.Node => await this.downloadManager.RetrieveNodejsReleasesAsync(config.NodeRegistry),
           _ => throw new InvalidDistributionException(distribution!),
         };
 
@@ -45,6 +50,7 @@ public partial class Commands {
           version = distribution switch {
             Distribution.Bun => this.NormalizeBunTag(version),
             Distribution.Deno => this.NormalizeDenoTag(version),
+            Distribution.Node => this.NormalizeNodeTag(version),
             _ => throw new InvalidDistributionException(distribution!),
           };
 
@@ -71,13 +77,20 @@ public partial class Commands {
         var tag = distribution switch {
           Distribution.Bun => this.NormalizeBunTag(release.TagName),
           Distribution.Deno => this.NormalizeDenoDirectoryName(release.TagName),
+          Distribution.Node => this.NormalizeNodeDirectoryName(release.TagName),
           _ => throw new InvalidDistributionException(distribution!),
         };
 
-        var tmpZipFile = await this.downloadManager.DownloadReleaseAsync(distribution!, release.DownloadUrl, this.fileSystemManager);
         var extractDirectory = Path.Join(this.fileSystemManager.CurrentPath, tag);
+        var tmpCompressedFile = await this.downloadManager.DownloadReleaseAsync(distribution!, release.DownloadUrl, this.fileSystemManager);
 
-        this.downloadManager.ExtractZipFileAsync(tmpZipFile, extractDirectory);
+        if (release.DownloadUrl.EndsWith(".zip")) {
+          this.fileSystemManager.ExtractZipFile(tmpCompressedFile, extractDirectory);
+        } else if (release.DownloadUrl.EndsWith(".tar.gz")) {
+          this.fileSystemManager.ExtractTarGzipFile(tmpCompressedFile, extractDirectory);
+        } else {
+          throw new NotImplementedException();
+        }
       },
       argument,
       forceOption,
