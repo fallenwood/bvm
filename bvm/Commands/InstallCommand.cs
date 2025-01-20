@@ -6,6 +6,7 @@ using System.CommandLine;
 using System.IO;
 using System.Linq;
 using Bvm.Models;
+using Microsoft.Extensions.Logging;
 
 public partial class Commands {
   private const string LatestVersion = "latest";
@@ -25,11 +26,16 @@ public partial class Commands {
     command.AddArgument(argument);
 
     command.SetHandler(
-      async (version, force, distribution) => {
+      async (version, force, distribution, silent) => {
+        if (silent) {
+          Logger.Instance.Silent();
+        }
+
         if (version is null) {
-          Console.WriteLine("Please provide a version to install");
+          Logger.Instance.LogError("Please provide a version to install");
           return;
         }
+
 
         var config = await this.fileSystemManager.ReadConfigAsync();
 
@@ -58,7 +64,7 @@ public partial class Commands {
         }
 
         if (release is null) {
-          Console.WriteLine($"Version {version} not found");
+          Logger.Instance.LogError($"Version {version} not found");
           return;
         }
 
@@ -66,10 +72,10 @@ public partial class Commands {
         var installedTags = installedReleases.Select(r => r.TagName).ToHashSet();
         if (installedTags.Contains(release.TagName)) {
           if (force) {
-            Console.Error.WriteLine($"Version {version} already installed, but force option is set");
+            Logger.Instance.LogWarning($"Version {version} already installed, but force option is set");
             this.fileSystemManager.RemoveBun(release.TagName);
           } else {
-            Console.WriteLine($"Version {version} already installed");
+            Logger.Instance.LogWarning($"Version {version} already installed");
             return;
           }
         }
@@ -94,7 +100,8 @@ public partial class Commands {
       },
       argument,
       forceOption,
-      this.DistributionOption);
+      this.DistributionOption,
+      this.SilentOption);
 
     return command;
   }

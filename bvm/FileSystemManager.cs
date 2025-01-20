@@ -1,5 +1,7 @@
-using Bvm;
+namespace Bvm;
+
 using Bvm.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -306,7 +308,7 @@ public partial class FileSystemManager(
     if (Directory.Exists(source)) {
       Directory.Delete(source, recursive: true);
     } else {
-      Console.WriteLine($"Directory {source} not found");
+      Logger.Instance.LogError($"Directory {source} not found");
     }
   }
 
@@ -317,7 +319,7 @@ public partial class FileSystemManager(
     if (Directory.Exists(source)) {
       Directory.Delete(source, recursive: true);
     } else {
-      Console.WriteLine($"Directory {source} not found");
+      Logger.Instance.LogError($"Directory {source} not found");
     }
   }
 
@@ -328,7 +330,7 @@ public partial class FileSystemManager(
     if (Directory.Exists(source)) {
       Directory.Delete(source, recursive: true);
     } else {
-      Console.WriteLine($"Directory {source} not found");
+      Logger.Instance.LogError($"Directory {source} not found");
     }
   }
 

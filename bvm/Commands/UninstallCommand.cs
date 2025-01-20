@@ -1,9 +1,8 @@
 namespace Bvm;
 
-using System;
 using System.CommandLine;
-using System.Linq;
 using Bvm.Models;
+using Microsoft.Extensions.Logging;
 
 public partial class Commands {
   private const string Default = "default";
@@ -17,14 +16,18 @@ public partial class Commands {
     command.AddArgument(tagArgument);
 
     command.SetHandler(
-      (tag, distribution) => {
+      (tag, distribution, silent) => {
+        if (silent) {
+          Logger.Instance.Silent();
+        }
+
         if (string.IsNullOrEmpty(tag)) {
-          Console.WriteLine("Please provide a tag to use");
+          Logger.Instance.LogError("Please provide a tag to use");
           return;
         }
 
         if (string.Equals(Default, tag)) {
-          Console.WriteLine("TODO");
+          Logger.Instance.LogError("TODO");
           return;
         }
 
@@ -39,7 +42,8 @@ public partial class Commands {
         }
       },
       tagArgument,
-      this.DistributionOption);
+      this.DistributionOption,
+      this.SilentOption);
 
     return command;
   }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
 using Bvm.Models;
+using Microsoft.Extensions.Logging;
 
 public partial class Commands {
   public Command ListCommand() {
@@ -46,7 +47,7 @@ public partial class Commands {
 
         foreach (var release in releases.OrderBy(e => e.CreatedAt)) {
           var installed = installedTags.Contains(release.TagName) ? "*" : string.Empty;
-          Console.WriteLine($"{release.Name} {installed}");
+          Logger.Instance.LogInformation($"{release.Name} {installed}");
         }
       },
       allOptions,
