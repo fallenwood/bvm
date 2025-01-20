@@ -16,8 +16,9 @@ var fileSystemManager = new FileSystemManager(
   "");
 
 var httpClient = await GetHttpClient(fileSystemManager);
+var downloadClient = new DownloadClient(httpClient);
 
-var downloadManager = new DownloadManager(httpClient, platform);
+var downloadManager = new DownloadManager(downloadClient, platform);
 
 var commands = new Commands(platform, downloadManager, fileSystemManager);
 var rootCommand = new RootCommand("Simple Bun/Deno version manager");
@@ -34,7 +35,7 @@ rootCommand.SetHandler(async () =>
 
     Console.WriteLine($"proxy         = {config.Proxy}");
     Console.WriteLine($"node registry = {config.NodeRegistry}");
-    Console.WriteLine($"npm  registry = {config.NpmRegistry}");
+    // Console.WriteLine($"npm  registry = {config.NpmRegistry}");
     Console.WriteLine($"bun  version  = {config.BunVersion}");
     Console.WriteLine($"deno version  = {config.DenoVersion}");
     Console.WriteLine($"node version  = {config.NodeVersion}");

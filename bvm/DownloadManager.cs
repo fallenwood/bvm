@@ -20,7 +20,7 @@ public interface IDownloadManager {
 }
 
 public sealed partial class DownloadManager(
-  HttpClient httpClient,
+  IDownloadClient downloadClient,
   Platform platform)
   : IDownloadManager {
   private const string GithubReleaseUri = "https://api.github.com/repos/{0}/{1}/releases?page={2}&per_page={3}";
@@ -74,7 +74,7 @@ public sealed partial class DownloadManager(
   }
 
   public async Task<string> DownloadReleaseAsync(string distribution, string uri, IFileSystemManager fileSystemManager) {
-    var response = await httpClient.GetAsync(uri);
+    var response = await downloadClient.GetAsync(uri, showProgress: true);
     response.EnsureSuccessStatusCode();
 
     var fileName = uri.Split('/').Last();
@@ -108,7 +108,7 @@ public sealed partial class DownloadManager(
 
     var uri = string.Format(NodeDistUri, registry);
 
-    var httpResponse = await httpClient.GetAsync(uri);
+    var httpResponse = await downloadClient.GetAsync(uri, showProgress: true);
     httpResponse.EnsureSuccessStatusCode();
 
     var responseStream = await httpResponse.Content.ReadAsStreamAsync();
@@ -158,7 +158,7 @@ public sealed partial class DownloadManager(
     int pageSize) {
     var uri = string.Format(GithubReleaseUri, owner, repo, page, pageSize);
 
-    var httpResponse = await httpClient.GetAsync(uri);
+    var httpResponse = await downloadClient.GetAsync(uri, showProgress: false);
     httpResponse.EnsureSuccessStatusCode();
 
     var responseStream = await httpResponse.Content.ReadAsStreamAsync();
