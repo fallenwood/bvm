@@ -1,13 +1,27 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: "CI"
 
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+    inputs:
+      is_stable_build:
+        description: Use a version number indicating this is a stable release
+        required: true
+        default: "false"
+      release:
+        description: Create a release
+        required: true
+        default: "false"
+
+env:
+  IS_STABLE_BUILD: ${{ github.event.inputs.is_stable_build }}
+  BUILD_NUMBER: ${{ github.run_number }}
 
 jobs:
   build_matrix:
@@ -28,4 +42,41 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal bvm.unittests/bvm.unittests.csproj
     - name: Publish Aot
-      run: dotnet publish -c Release bvm/bvm.csproj
+      run: dotnet publish -c Release bvm/bvm.csproj -o artifacts
+    - uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: artifacts/
+        if-no-files-found: error
+
+  release:
+    if: ${{ github.event.inputs.release }}
+    needs: build
+    runs-on: windows-latest
+    env:
+      PACKAGE_VERSION: ${{ needs.build.outputs.package_version }}
+    steps:
+      - run: echo "Releasing ${{ env.PACKAGE_VERSION }}"
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+        with:
+          nuget-version: latest
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ env.PACKAGE_VERSION }}
+          tag_name: v${{ env.PACKAGE_VERSION }}
+          generate_release_notes: true
+          append_body: true
+          body: |
+            ## Release ${{ env.PACKAGE_VERSION }}
+
+          draft: false
+          prerelease: ${{ env.IS_STABLE_BUILD == 'false' }}
+          files: packages/*
