@@ -1,6 +1,11 @@
 using Bvm;
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 using System.Net;
+using System.Text;
+
+Console.InputEncoding = Encoding.UTF8;
+Console.OutputEncoding = Encoding.UTF8;
 
 var platform = PlatformDetector.Detect();
 
@@ -16,12 +21,14 @@ var fileSystemManager = new FileSystemManager(
   "");
 
 var httpClient = await GetHttpClient(fileSystemManager);
+var downloadClient = new DownloadClient(httpClient);
 
-var downloadManager = new DownloadManager(httpClient, platform);
+var downloadManager = new DownloadManager(downloadClient, platform);
 
 var commands = new Commands(platform, downloadManager, fileSystemManager);
 var rootCommand = new RootCommand("Simple Bun/Deno version manager");
 rootCommand.AddGlobalOption(commands.DistributionOption);
+rootCommand.AddGlobalOption(commands.SilentOption);
 
 rootCommand.AddCommand(commands.UseCommand());
 rootCommand.AddCommand(commands.ListCommand());
@@ -32,12 +39,12 @@ rootCommand.SetHandler(async () =>
   {
     var config = await fileSystemManager.ReadConfigAsync();
 
-    Console.WriteLine($"proxy         = {config.Proxy}");
-    Console.WriteLine($"node registry = {config.NodeRegistry}");
-    Console.WriteLine($"npm  registry = {config.NpmRegistry}");
-    Console.WriteLine($"bun  version  = {config.BunVersion}");
-    Console.WriteLine($"deno version  = {config.DenoVersion}");
-    Console.WriteLine($"node version  = {config.NodeVersion}");
+    Logger.Instance.LogInformation($"proxy         = {config.Proxy}");
+    Logger.Instance.LogInformation($"node registry = {config.NodeRegistry}");
+    // Logger.Instance.LogInformation($"npm  registry = {config.NpmRegistry}");
+    Logger.Instance.LogInformation($"bun  version  = {config.BunVersion}");
+    Logger.Instance.LogInformation($"deno version  = {config.DenoVersion}");
+    Logger.Instance.LogInformation($"node version  = {config.NodeVersion}");
   });
 
 await rootCommand.InvokeAsync(args);

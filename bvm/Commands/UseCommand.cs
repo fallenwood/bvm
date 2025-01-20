@@ -4,6 +4,7 @@ using System;
 using System.CommandLine;
 using System.Linq;
 using Bvm.Models;
+using Microsoft.Extensions.Logging;
 
 public partial class Commands {
   public Command UseCommand() {
@@ -20,9 +21,13 @@ public partial class Commands {
     useCommand.AddOption(allOption);
 
     useCommand.SetHandler(
-      async (tag, distribution, all) => {
+      async (tag, distribution, all, silent) => {
+        if (silent) {
+          Logger.Instance.Silent();
+        }
+
         if (string.IsNullOrEmpty(tag)) {
-          Console.WriteLine("Please provide a tag to use");
+          Logger.Instance.LogError("Please provide a tag to use");
           return;
         }
 
@@ -36,7 +41,7 @@ public partial class Commands {
           var release = installed.FirstOrDefault(r => string.Equals(r.TagName, tag));
 
           if (release is null) {
-            Console.WriteLine($"Version {tag} not found");
+            Logger.Instance.LogError($"Version {tag} not found");
             return;
           }
 
@@ -51,7 +56,7 @@ public partial class Commands {
           var release = installed.FirstOrDefault(r => string.Equals(r.TagName, directoryName));
 
           if (release is null) {
-            Console.WriteLine($"Version {directoryName} not found");
+            Logger.Instance.LogError($"Version {directoryName} not found");
             return;
           }
 
@@ -63,7 +68,7 @@ public partial class Commands {
           var installed = this.fileSystemManager.GetInstalledNodeReleases();
           var release = installed.FirstOrDefault(r => string.Equals(r.TagName, directoryName));
           if (release is null) {
-            Console.WriteLine($"Version {directoryName} not found");
+            Logger.Instance.LogError($"Version {directoryName} not found");
             return;
           }
 
@@ -77,7 +82,8 @@ public partial class Commands {
       },
       tagArgument,
       this.DistributionOption,
-      allOption);
+      allOption,
+      this.SilentOption);
 
     return useCommand;
   }

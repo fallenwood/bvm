@@ -4,3 +4,5 @@
 **/output
 **/output-linux-arm64
 .build
+.vscode
+*.sln

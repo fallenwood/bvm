@@ -16,6 +16,11 @@ public partial class Commands(
     description: "Select the distribution to install",
     getDefaultValue: () => "bun");
 
+  public Option<bool> SilentOption { get; } = new Option<bool>(
+    aliases: ["--silent", "-s"],
+    description: "Silent mode",
+    getDefaultValue: () => false);
+
   public string NormalizeBunTag(string tag) {
     if (tag.StartsWith("bun-")) {
       return tag;
