@@ -2,6 +2,10 @@ using Bvm;
 using Microsoft.Extensions.Logging;
 using System.CommandLine;
 using System.Net;
+using System.Text;
+
+Console.InputEncoding = Encoding.UTF8;
+Console.OutputEncoding = Encoding.UTF8;
 
 var platform = PlatformDetector.Detect();
 
