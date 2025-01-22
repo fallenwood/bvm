@@ -25,7 +25,8 @@ public class DownloadManagerTests {
     string tagName,
     string distribution,
     bool expected) {
-    var downloadManager = new DownloadManager(new System.Net.Http.HttpClient(), platform);
+    var downloadClient = new DownloadClient(new HttpClient());
+    var downloadManager = new DownloadManager(downloadClient, platform);
 
     var actual = downloadManager.IsPlatformMatch(tagName, distribution);
 
@@ -39,7 +40,8 @@ public class DownloadManagerTests {
     string distribution,
     ReleasesResponse[] responses,
     List<Release> expected) {
-    var downloadManager = new DownloadManager(new System.Net.Http.HttpClient(), platform);
+    var downloadClient = new DownloadClient(new HttpClient());
+    var downloadManager = new DownloadManager(downloadClient, platform);
 
     var actual = downloadManager.ExtractReleaseFromResponse(distribution, responses);
 

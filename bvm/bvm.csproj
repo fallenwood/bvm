@@ -9,7 +9,6 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Fallenwood.PublishAotCross" />
   </ItemGroup>
 
 </Project>

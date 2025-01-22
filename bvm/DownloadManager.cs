@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -26,16 +27,22 @@ public sealed partial class DownloadManager(
   private const string GithubReleaseUri = "https://api.github.com/repos/{0}/{1}/releases?page={2}&per_page={3}";
   private const string NodeDistUri = "{0}/dist";
   private const string NodeExeUri = "{0}/dist/{1}/{2}";
-  private const string NodeWindowsAmd64Exe = "node-{0}-win-x64.zip";
-  private const string NodeLinuxAmd64Exe = "node-{0}-linux-x64.tar.gz";
-  private const string NodeLinuxAarch64Exe = "node-{0}-linux-arm64.tar.gz";
+  private const string NodeJsOrg = "https://nodejs.org/";
 
-  private const string BunWindowsAmd64 = "bun-windows-x64.zip";
-  private const string BunLinuxAmd64 = "bun-linux-x64.zip";
-  private const string BunLinuxAarch64 = "bun-linux-aarch64.zip";
-  private const string DenoWindowsAmd64 = "deno-x86_64-pc-windows-msvc.zip";
-  private const string DenoLinuxAmd64 = "deno-x86_64-unknown-linux-gnu.zip";
-  private const string DenoLinuxAarch64 = "deno-aarch64-unknown-linux-gnu.zip";
+  private const string NodeWindowsAmd64Archive = "node-{0}-win-x64.zip";
+  private const string NodeLinuxAmd64Archive = "node-{0}-linux-x64.tar.gz";
+  private const string NodeLinuxAarch64Archive = "node-{0}-linux-arm64.tar.gz";
+  private const string NodeMacAmd64Archive = "node-{0}-darwin-x64.tar.gz ";
+
+  private const string BunWindowsAmd64Archive = "bun-windows-x64.zip";
+  private const string BunLinuxAmd64Archive = "bun-linux-x64.zip";
+  private const string BunLinuxAarch64Archive = "bun-linux-aarch64.zip";
+  private const string BunMacAmd64Archive = "bun-darwin-x64.zip";
+
+  private const string DenoWindowsAmd64Archive = "deno-x86_64-pc-windows-msvc.zip";
+  private const string DenoLinuxAmd64Archive = "deno-x86_64-unknown-linux-gnu.zip";
+  private const string DenoLinuxAarch64Archive = "deno-aarch64-unknown-linux-gnu.zip";
+  private const string DenoOsXAmd64Archive = "deno-x86_64-apple-darwin.zip";
 
   [GeneratedRegex(@"<a href=""(v\d+\.\d+\.\d+)/"">(v\d+\.\d+\.\d+)/</a>\s+([\w|-]+\s+\d+:\d+)\s+-")]
   private static partial Regex NodeJsVersionRegex();
@@ -103,13 +110,15 @@ public sealed partial class DownloadManager(
   public async Task<List<Release>> RetrieveNodejsReleasesAsync(
     string? registry) {
     if (string.IsNullOrWhiteSpace(registry)) {
-      registry = "https://nodejs.org/";
+      registry = NodeJsOrg;
     }
 
     var uri = string.Format(NodeDistUri, registry);
 
-    var (httpResponse, responseStream) = await downloadClient.GetAsyncWithProgress(uri);
+    var httpResponse = await downloadClient.GetAsync(uri);
     httpResponse.EnsureSuccessStatusCode();
+
+    var responseStream = await httpResponse.Content.ReadAsStreamAsync();
 
     using var streamReader = new StreamReader(responseStream);
 
@@ -127,9 +136,10 @@ public sealed partial class DownloadManager(
         var name = match.Groups[2].Value;
 
         var nodeExe = platform switch {
-          Platform.WindowsAmd64 => string.Format(NodeWindowsAmd64Exe, tag),
-          Platform.LinuxAmd64 => string.Format(NodeLinuxAmd64Exe, tag),
-          Platform.LinuxAarch64 => string.Format(NodeLinuxAarch64Exe, tag),
+          Platform.WindowsAmd64 => string.Format(NodeWindowsAmd64Archive, tag),
+          Platform.LinuxAmd64 => string.Format(NodeLinuxAmd64Archive, tag),
+          Platform.LinuxAarch64 => string.Format(NodeLinuxAarch64Archive, tag),
+          Platform.MacAmd64 => string.Format(NodeMacAmd64Archive, tag),
           _ => throw new InvalidPlatformException(platform),
         };
 
@@ -196,15 +206,17 @@ public sealed partial class DownloadManager(
   internal bool IsPlatformMatch(string name, string distribution) {
     return distribution switch {
       Distribution.Bun => platform switch {
-        Platform.WindowsAmd64 => string.Equals(name, BunWindowsAmd64, StringComparison.OrdinalIgnoreCase),
-        Platform.LinuxAmd64 => string.Equals(name, BunLinuxAmd64, StringComparison.OrdinalIgnoreCase),
-        Platform.LinuxAarch64 => string.Equals(name, BunLinuxAarch64, StringComparison.OrdinalIgnoreCase),
+        Platform.WindowsAmd64 => string.Equals(name, BunWindowsAmd64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.LinuxAmd64 => string.Equals(name, BunLinuxAmd64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.LinuxAarch64 => string.Equals(name, BunLinuxAarch64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.MacAmd64 => string.Equals(name, BunMacAmd64Archive, StringComparison.OrdinalIgnoreCase),
         _ => false,
       },
       Distribution.Deno => platform switch {
-        Platform.WindowsAmd64 => string.Equals(name, DenoWindowsAmd64, StringComparison.OrdinalIgnoreCase),
-        Platform.LinuxAmd64 => string.Equals(name, DenoLinuxAmd64, StringComparison.OrdinalIgnoreCase),
-        Platform.LinuxAarch64 => string.Equals(name, DenoLinuxAarch64, StringComparison.OrdinalIgnoreCase),
+        Platform.WindowsAmd64 => string.Equals(name, DenoWindowsAmd64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.LinuxAmd64 => string.Equals(name, DenoLinuxAmd64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.LinuxAarch64 => string.Equals(name, DenoLinuxAarch64Archive, StringComparison.OrdinalIgnoreCase),
+        Platform.MacAmd64 => string.Equals(name, DenoOsXAmd64Archive, StringComparison.OrdinalIgnoreCase),
         _ => false,
       },
       _ => throw new InvalidDistributionException(distribution!),

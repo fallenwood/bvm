@@ -7,6 +7,7 @@ public enum Platform {
   WindowsAmd64,
   LinuxAmd64,
   LinuxAarch64,
+  MacAmd64,
 }
 
 public static class PlatformDetector {
@@ -20,6 +21,8 @@ public static class PlatformDetector {
       }
     } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       platform = Platform.WindowsAmd64;
+    } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+      platform = Platform.MacAmd64;
     }
 
     return platform;
