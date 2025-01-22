@@ -90,12 +90,15 @@ public partial class Commands {
         var extractDirectory = Path.Join(this.fileSystemManager.CurrentPath, tag);
         var tmpCompressedFile = await this.downloadManager.DownloadReleaseAsync(distribution!, release.DownloadUrl, this.fileSystemManager);
 
-        if (release.DownloadUrl.EndsWith(".zip")) {
+        // Only fails on mac
+        var donwloadUrl = release.DownloadUrl.Trim();
+
+        if (donwloadUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) {
           this.fileSystemManager.ExtractZipFile(tmpCompressedFile, extractDirectory);
-        } else if (release.DownloadUrl.EndsWith(".tar.gz")) {
+        } else if (donwloadUrl.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) {
           this.fileSystemManager.ExtractTarGzipFile(tmpCompressedFile, extractDirectory);
         } else {
-          throw new NotImplementedException();
+          throw new NotImplementedException($"Cannot extract {release.DownloadUrl}");
         }
       },
       argument,

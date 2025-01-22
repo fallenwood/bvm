@@ -41,6 +41,8 @@ public partial class FileSystemManager(
   private const string BunWindowsAmd64SubPath = "bun-windows-x64";
   private const string BunLinuxAmd64SubPath = "bun-linux-x64";
   private const string BunLinuxAarch64SubPath = "bun-linux-aarch64";
+  private const string BunMacAmd64SubPath = "bun-darwin-x64";
+
   private const string BunWindowsExecutable = "bun.exe";
   private const string BunXnixExecutable = "bun";
 
@@ -52,6 +54,7 @@ public partial class FileSystemManager(
   private const string NodeWindowsAmd64SubPath = "{0}-win-x64";
   private const string NodeLinuxAmd64SubPath = "{0}-linux-x64";
   private const string NodeLinuxAarch64SubPath = "{0}-linux-arm64";
+  private const string NodeMacAmd64SubPath = "{0}-darwin-x64";
 
   private Config? cachedConfig = null;
 
@@ -178,6 +181,7 @@ public partial class FileSystemManager(
       Platform.WindowsAmd64 => BunWindowsExecutable,
       Platform.LinuxAmd64 => BunXnixExecutable,
       Platform.LinuxAarch64 => BunXnixExecutable,
+      Platform.MacAmd64 => BunXnixExecutable,
       _ => throw new InvalidPlatformException(platform),
     };
 
@@ -185,6 +189,7 @@ public partial class FileSystemManager(
       Platform.WindowsAmd64 => BunWindowsAmd64SubPath,
       Platform.LinuxAmd64 => BunLinuxAmd64SubPath,
       Platform.LinuxAarch64 => BunLinuxAarch64SubPath,
+      Platform.MacAmd64 => BunMacAmd64SubPath,
       _ => throw new InvalidPlatformException(platform),
     };
 
@@ -199,6 +204,7 @@ public partial class FileSystemManager(
       Platform.WindowsAmd64 => DenoWindowsExecutable,
       Platform.LinuxAmd64 => DenoXnixExecutable,
       Platform.LinuxAarch64 => DenoXnixExecutable,
+      Platform.MacAmd64 => DenoXnixExecutable,
       _ => throw new InvalidPlatformException(platform),
     };
 
@@ -234,6 +240,7 @@ public partial class FileSystemManager(
       var subpath = platform switch {
         Platform.LinuxAarch64 => string.Format(NodeLinuxAarch64SubPath, tag),
         Platform.LinuxAmd64 => string.Format(NodeLinuxAmd64SubPath, tag),
+        Platform.MacAmd64 => string.Format(NodeMacAmd64SubPath, tag),
         _ => throw new InvalidPlatformException(platform),
       };
 
