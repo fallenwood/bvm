@@ -37,6 +37,9 @@ public partial class Commands {
         } else if (distribution == Distribution.Deno) {
           tag = this.NormalizeDenoTag(tag);
           this.fileSystemManager.RemoveDeno(tag);
+        } else if (distribution == Distribution.Node) {
+          tag = this.NormalizeNodeTag(tag);
+          this.fileSystemManager.RemoveNode(tag);
         } else {
           throw new InvalidDistributionException(distribution!);
         }
