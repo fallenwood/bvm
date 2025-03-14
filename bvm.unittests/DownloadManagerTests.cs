@@ -25,10 +25,14 @@ public class DownloadManagerTests {
     string tagName,
     string distribution,
     bool expected) {
-    var downloadClient = new DownloadClient(new HttpClient());
-    var downloadManager = new DownloadManager(downloadClient, platform);
+    IVersionManagerHandler versionManagerHandler = distribution switch {
+      Distribution.Bun => new BunVersionManager(),
+      Distribution.Deno => new DenoVersionManager(),
+      Distribution.Node => new NodeJSVersionManager(),
+      _ => throw new InvalidDistributionException(distribution!),
+    };
 
-    var actual = downloadManager.IsPlatformMatch(tagName, distribution);
+    var actual = versionManagerHandler.IsPlatformMatch(platform, tagName, distribution);
 
     Assert.Equal(expected, actual);
   }
@@ -40,10 +44,14 @@ public class DownloadManagerTests {
     string distribution,
     ReleasesResponse[] responses,
     List<Release> expected) {
-    var downloadClient = new DownloadClient(new HttpClient());
-    var downloadManager = new DownloadManager(downloadClient, platform);
+    IVersionManagerHandler versionManagerHandler = distribution switch {
+      Distribution.Bun => new BunVersionManager(),
+      Distribution.Deno => new DenoVersionManager(),
+      Distribution.Node => new NodeJSVersionManager(),
+      _ => throw new InvalidDistributionException(distribution!),
+    };
 
-    var actual = downloadManager.ExtractReleaseFromResponse(distribution, responses);
+    var actual = versionManagerHandler.ExtractReleaseFromResponse(platform, distribution, responses);
 
     Assert.Equal(expected.Count, actual.Count);
 

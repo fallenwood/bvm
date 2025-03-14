@@ -1,6 +1,5 @@
 namespace Bvm;
 
-using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
@@ -20,25 +19,16 @@ public partial class Commands {
     command.AddOption(allOptions);
     command.SetHandler(
       async (all, distribution) => {
-        var installedReleases = distribution switch {
-          Distribution.Bun => this.fileSystemManager.GetInstalledBunReleases(),
-          Distribution.Deno => this.fileSystemManager.GetInstalledDenoReleases(),
-          Distribution.Node => this.fileSystemManager.GetInstalledNodeReleases(),
-          _ => throw new InvalidDistributionException(distribution!),
-        };
-
+        var versionManagerHandler = this.GetVersionManagerHandler(distribution);
+        var installedReleases = versionManagerHandler.GetInstalledReleases(this.fileSystemManager);
+        
         var installedTags = installedReleases.Select(r => r.TagName).ToHashSet();
         var releases = new List<Release>(installedReleases.Count);
 
         if (all) {
           var config = await this.fileSystemManager.ReadConfigAsync();
 
-          var remoteReleases = distribution switch {
-            Distribution.Bun => await this.downloadManager.RetriveBunReleasesAsync(),
-            Distribution.Deno => await this.downloadManager.RetriveDenoReleasesAsync(),
-            Distribution.Node => await this.downloadManager.RetrieveNodejsReleasesAsync(config.NodeRegistry),
-            _ => throw new InvalidDistributionException(distribution!),
-          };
+          var remoteReleases = await versionManagerHandler.RetrieveReleasesAsync(this.downloadManager.Client, platform, config.NodeRegistry);
 
           releases.AddRange(remoteReleases);
         } else {

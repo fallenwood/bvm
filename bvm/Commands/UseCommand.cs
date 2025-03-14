@@ -1,6 +1,5 @@
 namespace Bvm;
 
-using System;
 using System.CommandLine;
 using System.Linq;
 using Bvm.Models;
@@ -34,49 +33,29 @@ public partial class Commands {
         var config = await this.fileSystemManager.ReadConfigAsync();
         distribution = this.NormalizeDistribution(distribution);
 
+        var versionManagerHandler = this.GetVersionManagerHandler(distribution);
+        var directoryName = versionManagerHandler.NormalizeDirectoryName(tag);
+        var installed = versionManagerHandler.GetInstalledReleases(this.fileSystemManager);
+        var release = installed.FirstOrDefault(r => string.Equals(r.TagName, directoryName));
+
+        if (release is null) {
+          Logger.Instance.LogError("Version {version} not found", directoryName);
+          return;
+        }
+
         if (distribution == Distribution.Bun) {
-          tag = this.NormalizeBunTag(tag);
-
-          var installed = this.fileSystemManager.GetInstalledBunReleases();
-          var release = installed.FirstOrDefault(r => string.Equals(r.TagName, tag));
-
-          if (release is null) {
-            Logger.Instance.LogError($"Version {tag} not found");
-            return;
-          }
-
-          config.BunVersion = tag;
-
-          this.fileSystemManager.CopyOrLinkBun(tag);
+          config.BunVersion = directoryName;
         } else if (distribution == Distribution.Deno) {
-          var directoryName = this.NormalizeDenoDirectoryName(tag);
-
-          var installed = this.fileSystemManager.GetInstalledDenoReleases();
-
-          var release = installed.FirstOrDefault(r => string.Equals(r.TagName, directoryName));
-
-          if (release is null) {
-            Logger.Instance.LogError($"Version {directoryName} not found");
-            return;
-          }
-
           config.DenoVersion = directoryName;
-
-          this.fileSystemManager.CopyOrLinkDeno(directoryName);
         } else if (distribution == Distribution.Node) {
-          var directoryName = this.NormalizeNodeDirectoryName(tag);
-          var installed = this.fileSystemManager.GetInstalledNodeReleases();
-          var release = installed.FirstOrDefault(r => string.Equals(r.TagName, directoryName));
-          if (release is null) {
-            Logger.Instance.LogError($"Version {directoryName} not found");
-            return;
-          }
-
           config.NodeVersion = directoryName;
-          this.fileSystemManager.CopyOrLinkNode(directoryName, all);
+        } else if (distribution == Distribution.Tailwind) {
+          config.TailwindVersion = directoryName;
         } else {
           throw new InvalidDistributionException(distribution!);
         }
+
+        versionManagerHandler.CopyOrLink(this.fileSystemManager, platform, directoryName, all);
 
         await this.fileSystemManager.WriteConfigAsync(config);
       },

@@ -36,30 +36,20 @@ public partial class Commands {
           return;
         }
 
-
         var config = await this.fileSystemManager.ReadConfigAsync();
 
         distribution = this.NormalizeDistribution(distribution);
 
-        List<Release> releases = distribution switch {
-          Distribution.Bun => await this.downloadManager.RetriveBunReleasesAsync(),
-          Distribution.Deno => await this.downloadManager.RetriveDenoReleasesAsync(),
-          Distribution.Node => await this.downloadManager.RetrieveNodejsReleasesAsync(config.NodeRegistry),
-          _ => throw new InvalidDistributionException(distribution!),
-        };
+        var versionManagerHandler = this.GetVersionManagerHandler(distribution);
 
+        List<Release> releases = await downloadManager.RetrieveReleasesAsync(versionManagerHandler, config.NodeRegistry);
+        
         Release? release;
 
         if (string.Equals(LatestVersion, version)) {
           release = releases.OrderByDescending(e => e.CreatedAt).FirstOrDefault();
         } else {
-          version = distribution switch {
-            Distribution.Bun => this.NormalizeBunTag(version),
-            Distribution.Deno => this.NormalizeDenoTag(version),
-            Distribution.Node => this.NormalizeNodeTag(version),
-            _ => throw new InvalidDistributionException(distribution!),
-          };
-
+          version = versionManagerHandler.NormalizeTag(version);
           release = releases.FirstOrDefault(e => string.Equals(e.TagName, version));
         }
 
@@ -68,27 +58,22 @@ public partial class Commands {
           return;
         }
 
-        var installedReleases = this.fileSystemManager.GetInstalledBunReleases();
+        var installedReleases = versionManagerHandler.GetInstalledReleases(this.fileSystemManager);
         var installedTags = installedReleases.Select(r => r.TagName).ToHashSet();
         if (installedTags.Contains(release.TagName)) {
           if (force) {
             Logger.Instance.LogWarning($"Version {version} already installed, but force option is set");
-            this.fileSystemManager.RemoveBun(release.TagName);
+            versionManagerHandler.Remove(this.fileSystemManager, release.TagName);
           } else {
             Logger.Instance.LogWarning($"Version {version} already installed");
             return;
           }
         }
 
-        var tag = distribution switch {
-          Distribution.Bun => this.NormalizeBunTag(release.TagName),
-          Distribution.Deno => this.NormalizeDenoDirectoryName(release.TagName),
-          Distribution.Node => this.NormalizeNodeDirectoryName(release.TagName),
-          _ => throw new InvalidDistributionException(distribution!),
-        };
+        var tag = versionManagerHandler.NormalizeDirectoryName(release.TagName);
 
         var extractDirectory = Path.Join(this.fileSystemManager.CurrentPath, tag);
-        var tmpCompressedFile = await this.downloadManager.DownloadReleaseAsync(distribution!, release.DownloadUrl, this.fileSystemManager);
+        var tmpCompressedFile = await this.downloadManager.DownloadReleaseAsync(versionManagerHandler, distribution!, release.DownloadUrl, this.fileSystemManager);
 
         // Only fails on mac
         var donwloadUrl = release.DownloadUrl.Trim();
@@ -98,7 +83,11 @@ public partial class Commands {
         } else if (donwloadUrl.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) {
           this.fileSystemManager.ExtractTarGzipFile(tmpCompressedFile, extractDirectory);
         } else {
-          throw new NotImplementedException($"Cannot extract {release.DownloadUrl}");
+          var targetFilePath = Path.Combine(extractDirectory, Path.GetFileName(tmpCompressedFile));
+          if (!Directory.Exists(extractDirectory)) {
+            Directory.CreateDirectory(extractDirectory);
+          }
+          this.fileSystemManager.CopyOnly(tmpCompressedFile, targetFilePath);
         }
       },
       argument,

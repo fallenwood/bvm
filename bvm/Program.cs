@@ -15,7 +15,6 @@ if (platform == Platform.Unknown) {
 }
 
 var fileSystemManager = new FileSystemManager(
-  platform,
   Path.GetDirectoryName(Environment.ProcessPath)!,
   Path.GetTempPath(),
   "");

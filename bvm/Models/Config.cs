@@ -4,6 +4,7 @@ public static class Distribution {
   public const string Bun = "bun";
   public const string Deno = "deno";
   public const string Node = "node";
+  public const string Tailwind = "tailwind";
 }
 
 public class Config {
@@ -13,6 +14,7 @@ public class Config {
   public const string NodeRegistryKey = "node_registry";
   public const string NpmRegistryKey = "npm_registry";
   public const string NodeVersionKey = "node_version";
+  public const string TailwindVersionKey = "tailwind_version";
 
   public string Proxy { get; set; } = "";
 
@@ -25,4 +27,6 @@ public class Config {
   public string NpmRegistry { get; set; } = "";
 
   public string NodeVersion { get; set; } = "";
+
+  public string TailwindVersion { get; set; } = "";
 }
