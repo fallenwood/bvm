@@ -75,7 +75,7 @@ public sealed partial class TailwindVersionManager : IVersionManagerHandler {
     }
 
     if (tag.StartsWith("tw-")) {
-      return tag[5..];
+      return tag[3..];
     }
 
     return $"v{tag}";
