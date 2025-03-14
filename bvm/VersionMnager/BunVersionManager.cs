@@ -33,19 +33,19 @@ public sealed partial class BunVersionManager : IVersionManagerHandler {
     var page = 1;
     var pageSize = 100;
 
-    var releases = await this.RetriveBunReleasesAsync(downloadClient, platform, page, pageSize);
+    var releases = await this.RetrieveBunReleasesAsync(downloadClient, platform, page, pageSize);
     var tmpReleases = releases;
 
     while (tmpReleases.Count >= pageSize) {
       page++;
-      tmpReleases = await this.RetriveBunReleasesAsync(downloadClient, platform, page, pageSize);
+      tmpReleases = await this.RetrieveBunReleasesAsync(downloadClient, platform, page, pageSize);
       releases.AddRange(tmpReleases);
     }
 
     return releases;
   }
 
-  private async Task<List<Release>> RetriveBunReleasesAsync(
+  private async Task<List<Release>> RetrieveBunReleasesAsync(
     IDownloadClient downloadClient,
     Platform platform,
     int page,

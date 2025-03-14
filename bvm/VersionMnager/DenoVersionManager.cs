@@ -28,19 +28,19 @@ public sealed partial class DenoVersionManager : IVersionManagerHandler {
     var page = 1;
     var pageSize = 100;
 
-    var releases = await this.RetriveDenoReleasesAsync(downloadClient, platform, page, pageSize);
+    var releases = await this.RetrieveDenoReleasesAsync(downloadClient, platform, page, pageSize);
     var tmpReleases = releases;
 
     while (tmpReleases.Count >= pageSize) {
       page++;
-      tmpReleases = await this.RetriveDenoReleasesAsync(downloadClient, platform, page, pageSize);
+      tmpReleases = await this.RetrieveDenoReleasesAsync(downloadClient, platform, page, pageSize);
       releases.AddRange(tmpReleases);
     }
 
     return releases;
   }
 
-  private async Task<List<Release>> RetriveDenoReleasesAsync(
+  private async Task<List<Release>> RetrieveDenoReleasesAsync(
     IDownloadClient downloadClient,
     Platform platform,
     int page,
