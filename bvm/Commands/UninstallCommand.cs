@@ -1,7 +1,6 @@
 namespace Bvm;
 
 using System.CommandLine;
-using Bvm.Models;
 using Microsoft.Extensions.Logging;
 
 public partial class Commands {
@@ -31,18 +30,10 @@ public partial class Commands {
           return;
         }
 
-        if (distribution == Distribution.Bun) {
-          tag = this.NormalizeBunTag(tag);
-          this.fileSystemManager.RemoveBun(tag);
-        } else if (distribution == Distribution.Deno) {
-          tag = this.NormalizeDenoTag(tag);
-          this.fileSystemManager.RemoveDeno(tag);
-        } else if (distribution == Distribution.Node) {
-          tag = this.NormalizeNodeTag(tag);
-          this.fileSystemManager.RemoveNode(tag);
-        } else {
-          throw new InvalidDistributionException(distribution!);
-        }
+        var versionManagerHandler = this.GetVersionManagerHandler(distribution);
+
+        tag = versionManagerHandler.NormalizeTag(tag);
+        versionManagerHandler.Remove(fileSystemManager, tag);
       },
       tagArgument,
       this.DistributionOption,

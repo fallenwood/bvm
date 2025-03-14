@@ -1,7 +1,7 @@
+namespace Bvm;
+
 using System.CommandLine;
 using Bvm.Models;
-
-namespace Bvm;
 
 public partial class Commands(
   Platform platform,
@@ -21,71 +21,22 @@ public partial class Commands(
     description: "Silent mode",
     getDefaultValue: () => false);
 
-  public string NormalizeBunTag(string tag) {
-    if (tag.StartsWith("bun-")) {
-      return tag;
-    }
-
-    if (tag.StartsWith("v")) {
-      return $"bun-{tag}";
-    }
-
-    return $"bun-v{tag}";
-  }
-
-  public string NormalizeDenoTag(string tag) {
-    if (tag.StartsWith("v")) {
-      return tag;
-    }
-
-    if (tag.StartsWith("deno-")) {
-      return tag[5..];
-    }
-
-    return $"v{tag}";
-  }
-
-  public string NormalizeNodeTag(string tag) {
-    if (tag.StartsWith("v")) {
-      return tag;
-    }
-
-    if (tag.StartsWith("node-")) {
-      return tag[5..];
-    }
-
-    return $"v{tag}";
-  }
-
-  public string NormalizeDenoDirectoryName(string tag) {
-    if (tag.StartsWith("deno-")) {
-      return tag;
-    }
-
-    if (tag.StartsWith("v")) {
-      return $"deno-{tag}";
-    }
-
-    return $"deno-v{tag}";
-  }
-
-  public string NormalizeNodeDirectoryName(string tag) {
-    if (tag.StartsWith("node-")) {
-      return tag;
-    }
-
-    if (tag.StartsWith("v")) {
-      return $"node-{tag}";
-    }
-
-    return $"node-v{tag}";
-  }
-
   public string? NormalizeDistribution(string? distribution) {
     if (distribution == "nodejs") {
       return Distribution.Node;
     }
 
     return distribution;
+  }
+
+  public IVersionManagerHandler GetVersionManagerHandler(string? distribution) {
+    IVersionManagerHandler versionManagerHandler = distribution switch {
+      Distribution.Bun => new BunVersionManager(),
+      Distribution.Deno => new DenoVersionManager(),
+      Distribution.Node => new NodeJSVersionManager(),
+      Distribution.Tailwind => new TailwindVersionManager(),
+      _ => throw new InvalidDistributionException(distribution!),
+    };
+    return versionManagerHandler;
   }
 }
