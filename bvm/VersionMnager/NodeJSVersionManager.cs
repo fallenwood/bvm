@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Bvm.Models;
 using Microsoft.Extensions.Logging;
+using Bvm.Models;
 
 public sealed partial class NodeJSVersionManager : IVersionManagerHandler {
   private const string NodeDistUri = "{0}/dist";

@@ -111,7 +111,7 @@ public sealed partial class TailwindVersionManager : IVersionManagerHandler {
     var source = Path.Combine(fileSystemManager.CurrentPath, tag, exe);
     var destination = Path.Combine(fileSystemManager.CurrentPath, targetExe);
 
-    fileSystemManager.LinkOnly(source, destination);
+    fileSystemManager.CopyFile(source, destination);
   }
 
   public List<Release> GetInstalledReleases(IFileSystemManager fileSystemManager) {

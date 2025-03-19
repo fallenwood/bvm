@@ -2,8 +2,8 @@ namespace Bvm;
 
 using System.CommandLine;
 using System.Linq;
-using Bvm.Models;
 using Microsoft.Extensions.Logging;
+using Bvm.Models;
 
 public partial class Commands {
   public Command UseCommand() {

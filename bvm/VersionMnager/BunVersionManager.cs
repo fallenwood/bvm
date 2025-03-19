@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Bvm.Models;
 using Microsoft.Extensions.Logging;
+using Bvm.Models;
 
 public sealed partial class BunVersionManager : IVersionManagerHandler {
   private const string BunWindowsAmd64Archive = "bun-windows-x64.zip";

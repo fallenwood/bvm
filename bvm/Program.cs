@@ -1,8 +1,8 @@
-using Bvm;
 using Microsoft.Extensions.Logging;
 using System.CommandLine;
 using System.Net;
 using System.Text;
+using Bvm;
 
 Console.InputEncoding = Encoding.UTF8;
 Console.OutputEncoding = Encoding.UTF8;
@@ -38,12 +38,13 @@ rootCommand.SetHandler(async () =>
   {
     var config = await fileSystemManager.ReadConfigAsync();
 
-    Logger.Instance.LogInformation($"proxy         = {config.Proxy}");
-    Logger.Instance.LogInformation($"node registry = {config.NodeRegistry}");
+    Logger.Instance.LogInformation($"proxy             = {config.Proxy}");
+    Logger.Instance.LogInformation($"node     registry = {config.NodeRegistry}");
     // Logger.Instance.LogInformation($"npm  registry = {config.NpmRegistry}");
-    Logger.Instance.LogInformation($"bun  version  = {config.BunVersion}");
-    Logger.Instance.LogInformation($"deno version  = {config.DenoVersion}");
-    Logger.Instance.LogInformation($"node version  = {config.NodeVersion}");
+    Logger.Instance.LogInformation($"bun      version  = {config.BunVersion}");
+    Logger.Instance.LogInformation($"deno     version  = {config.DenoVersion}");
+    Logger.Instance.LogInformation($"node     version  = {config.NodeVersion}");
+    Logger.Instance.LogInformation($"tailwind version  = {config.TailwindVersion}");
   });
 
 await rootCommand.InvokeAsync(args);

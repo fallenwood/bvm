@@ -1,6 +1,5 @@
 namespace Bvm;
 
-using Bvm.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Bvm.Models;
 
 public interface IFileSystemManager {
   public string CurrentPath { get; }
