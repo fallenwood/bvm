@@ -2,6 +2,7 @@ namespace Bvm;
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Bvm.Models;
@@ -104,14 +105,18 @@ public sealed partial class TailwindVersionManager : IVersionManagerHandler {
 
     var targetExe = platform switch {
       Platform.WindowsAmd64 => TailwindWindowsTargetExe,
-      Platform.LinuxAmd64 or  Platform.LinuxAarch64 or Platform.MacAmd64 => TailwindXnixTargetExe,
+      Platform.LinuxAmd64 or Platform.LinuxAarch64 or Platform.MacAmd64 => TailwindXnixTargetExe,
       _ => throw new InvalidPlatformException(platform),
     };
 
     var source = Path.Combine(fileSystemManager.CurrentPath, tag, exe);
     var destination = Path.Combine(fileSystemManager.CurrentPath, targetExe);
 
-    fileSystemManager.CopyFile(source, destination);
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      fileSystemManager.CopyFile(source, destination);
+    } else {
+      fileSystemManager.LinkOnly(source, destination);
+    }
   }
 
   public List<Release> GetInstalledReleases(IFileSystemManager fileSystemManager) {
