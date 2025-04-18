@@ -1,27 +1,23 @@
 namespace Bvm;
 
-using System.CommandLine;
 using Bvm.Models;
 
-public partial class Commands(
-  Platform platform,
-  IDownloadManager downloadManager,
-  IFileSystemManager fileSystemManager) {
-  private readonly Platform platform = platform;
-  private readonly IDownloadManager downloadManager = downloadManager;
-  private readonly IFileSystemManager fileSystemManager = fileSystemManager;
+public static partial  class Commands {
+  static Platform platform = Platform.Unknown;
+  static IDownloadManager downloadManager = null!;
+  static IFileSystemManager fileSystemManager = null!;
 
-  public Option<string?> DistributionOption { get; } = new Option<string?>(
-    aliases: ["--distribution", "-d"],
-    description: "Select the distribution to install",
-    getDefaultValue: () => "bun");
+  public static void Setup(
+    Platform platform,
+    IDownloadManager downloadManager,
+    IFileSystemManager fileSystemManager
+  ) {
+    Commands.platform = platform;
+    Commands.downloadManager = downloadManager;
+    Commands.fileSystemManager = fileSystemManager;
+  }
 
-  public Option<bool> SilentOption { get; } = new Option<bool>(
-    aliases: ["--silent", "-s"],
-    description: "Silent mode",
-    getDefaultValue: () => false);
-
-  public string? NormalizeDistribution(string? distribution) {
+  public static string? NormalizeDistribution(string? distribution) {
     if (distribution == "nodejs") {
       return Distribution.Node;
     }
@@ -29,7 +25,7 @@ public partial class Commands(
     return distribution;
   }
 
-  public IVersionManagerHandler GetVersionManagerHandler(string? distribution) {
+  public static IVersionManagerHandler GetVersionManagerHandler(string? distribution) {
     IVersionManagerHandler versionManagerHandler = distribution switch {
       Distribution.Bun => new BunVersionManager(),
       Distribution.Deno => new DenoVersionManager(),

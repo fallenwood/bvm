@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-using System.CommandLine;
 using System.Net;
 using System.Text;
 using Bvm;
@@ -24,30 +22,16 @@ var downloadClient = new DownloadClient(httpClient);
 
 var downloadManager = new DownloadManager(downloadClient, platform);
 
-var commands = new Commands(platform, downloadManager, fileSystemManager);
-var rootCommand = new RootCommand("Simple Bun/Deno version manager");
-rootCommand.AddGlobalOption(commands.DistributionOption);
-rootCommand.AddGlobalOption(commands.SilentOption);
+Commands.Setup(platform, downloadManager, fileSystemManager);
 
-rootCommand.AddCommand(commands.UseCommand());
-rootCommand.AddCommand(commands.ListCommand());
-rootCommand.AddCommand(commands.InstallCommand());
-rootCommand.AddCommand(commands.UninstallCommand());
+var app = ConsoleAppFramework.ConsoleApp.Create();
 
-rootCommand.SetHandler(async () =>
-  {
-    var config = await fileSystemManager.ReadConfigAsync();
+app.Add("use", Commands.UseAsync);
+app.Add("list", Commands.ListAsync);
+app.Add("install", Commands.InstallAsync);
+app.Add("uninstall", Commands.Uninstall);
 
-    Logger.Instance.LogInformation($"proxy             = {config.Proxy}");
-    Logger.Instance.LogInformation($"node     registry = {config.NodeRegistry}");
-    // Logger.Instance.LogInformation($"npm  registry = {config.NpmRegistry}");
-    Logger.Instance.LogInformation($"bun      version  = {config.BunVersion}");
-    Logger.Instance.LogInformation($"deno     version  = {config.DenoVersion}");
-    Logger.Instance.LogInformation($"node     version  = {config.NodeVersion}");
-    Logger.Instance.LogInformation($"tailwind version  = {config.TailwindVersion}");
-  });
-
-await rootCommand.InvokeAsync(args);
+await app.RunAsync(args);
 
 async Task<HttpClient> GetHttpClient(IFileSystemManager fileSystemManager) {
   var config = await fileSystemManager.ReadConfigAsync();
