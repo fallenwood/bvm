@@ -1,44 +1,30 @@
 namespace Bvm;
 
-using System.CommandLine;
 using Microsoft.Extensions.Logging;
 
-public partial class Commands {
-  private const string Default = "default";
+public static partial class Commands {
+  /// <summary>
+  /// Uninstall a specific version
+  /// </summary>
+  /// <param name="tag"></param>
+  /// <param name="distribution">-d, bun/node/deno/tailwindcss</param>
+  /// <param name="silent"></param>
+  /// <returns></returns>
+  public static void Uninstall(
+    [ConsoleAppFramework.Argument] string tag,
+    string distribution = "bun",
+    bool silent = true) {
+    if (silent) {
+      Logger.Instance.Silent();
+    }
 
-  public Command UninstallCommand() {
-    var command = new Command(
-      name: "uninstall");
+    if (string.IsNullOrEmpty(tag)) {
+      Logger.Instance.LogError("Please provide a tag to use");
+      return;
+    }
 
-    var tagArgument = new Argument<string?>(name: "tag");
-
-    command.AddArgument(tagArgument);
-
-    command.SetHandler(
-      (tag, distribution, silent) => {
-        if (silent) {
-          Logger.Instance.Silent();
-        }
-
-        if (string.IsNullOrEmpty(tag)) {
-          Logger.Instance.LogError("Please provide a tag to use");
-          return;
-        }
-
-        if (string.Equals(Default, tag)) {
-          Logger.Instance.LogError("TODO");
-          return;
-        }
-
-        var versionManagerHandler = this.GetVersionManagerHandler(distribution);
-
-        tag = versionManagerHandler.NormalizeTag(tag);
-        versionManagerHandler.Remove(fileSystemManager, tag);
-      },
-      tagArgument,
-      this.DistributionOption,
-      this.SilentOption);
-
-    return command;
+    var versionManagerHandler = Commands.GetVersionManagerHandler(distribution);
+    tag = versionManagerHandler.NormalizeTag(tag);
+    versionManagerHandler.Remove(fileSystemManager, tag);
   }
 }
