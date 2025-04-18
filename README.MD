@@ -9,17 +9,17 @@ With bvm binary on path
 
 ```
 # install bun 1.1.45, it will locate at where bvm is at
-bvm -d bun install 1.1.45
+bvm install -d bun  1.1.45
 
 # if there is no distribution provided, fallback to bun 
 bvm use 1.1.45
 
 # Install deno 2.1.6
-bvm -d deno install 2.1.6
+bvm install -d deno 2.1.6
 
 # Uninstall deno 2.1.6
-bvm -d deno uninstall 2.1.6
+bvm uninstall -d deno 2.1.6
 
 # Install nodejs 22.13.0
-bvm -d node install v22.13.0
+bvm install -d node v22.13.0
 ```
